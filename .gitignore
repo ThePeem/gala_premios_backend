@@ -1,0 +1,22 @@
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Environment
+.env
+venv/
+*.sqlite3
+
+# Media files (user-uploaded)
+media/
+
+# Static files (collected by collectstatic)
+staticfiles/
+
+# IDE-specific files (e.g., VS Code)
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db

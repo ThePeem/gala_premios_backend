@@ -1,0 +1,1 @@
+web: gunicorn gala_premios.wsgi:application --log-file -
