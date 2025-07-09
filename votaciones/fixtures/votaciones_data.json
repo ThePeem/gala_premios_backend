@@ -1,0 +1,195 @@
+[
+{
+  "model": "votaciones.usuario",
+  "pk": "13cc8159-f389-4f1f-be08-927e06a53236",
+  "fields": {
+    "password": "felipe",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Felipe",
+    "first_name": "Felipe",
+    "last_name": "Otalvares",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-07-09T14:53:50Z",
+    "foto_perfil": "perfiles/5fa434a4554ea.jpeg",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "votaciones.usuario",
+  "pk": "3cc28aff-77bc-4188-afc8-0e730ce93045",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$DPvHIe5hLrBexDYTYq4v6Y$u+LjkmNwbv9OEE4TyGDT++2sqEg8sDyfZSpNqlfwlAA=",
+    "last_login": "2025-07-09T14:53:25.531Z",
+    "is_superuser": true,
+    "username": "thepeemgod",
+    "first_name": "",
+    "last_name": "",
+    "email": "pablorenzo98@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-07-09T14:52:27.809Z",
+    "foto_perfil": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "votaciones.usuario",
+  "pk": "62eae320-3bf9-4849-9cfc-efcd1c2a73e3",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$hhnKPB7W2vwqtmqWESchLU$J9QsgPp23+L3vAZXyCHyis6FfDyxuQ7DMeAXfTLQNT0=",
+    "last_login": "2025-07-04T17:45:42.807Z",
+    "is_superuser": true,
+    "username": "thepeem",
+    "first_name": "",
+    "last_name": "",
+    "email": "thepeemxl@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-07-04T17:44:54.701Z",
+    "foto_perfil": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "votaciones.usuario",
+  "pk": "7361ad7d-5d22-47fa-b10c-982d9ed26ed8",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$LYRJUqBaa3JzPiEoskFA6I$PeXKlm2r2o0SwolAsnlzDumcGXShTF3eLmWwnxNupMk=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "votante_test",
+    "first_name": "",
+    "last_name": "",
+    "email": "votante@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-07-04T18:22:24.553Z",
+    "foto_perfil": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "votaciones.premio",
+  "pk": "900ddf52-f914-485d-9026-801956a06bdb",
+  "fields": {
+    "nombre": "Mejor Cortometraje",
+    "descripcion": "",
+    "fecha_entrega": null,
+    "activo": true,
+    "ronda_actual": 1,
+    "estado": "resultados",
+    "ganador_oro": "95d4cbc0-2d21-4c6e-86c8-8b51f4d6602b",
+    "ganador_plata": "60c358f7-d4e6-43f8-9c6e-65b5f6b5867e",
+    "ganador_bronce": "6836ebf1-fa4b-48e7-9817-a482f5b55127",
+    "fecha_resultados_publicados": "2025-07-31T22:11:21Z"
+  }
+},
+{
+  "model": "votaciones.nominado",
+  "pk": "60c358f7-d4e6-43f8-9c6e-65b5f6b5867e",
+  "fields": {
+    "premio": "900ddf52-f914-485d-9026-801956a06bdb",
+    "nombre": "Felipe",
+    "descripcion": "",
+    "imagen": "",
+    "activo": true,
+    "fecha_creacion": "2025-07-05T21:52:01.041Z",
+    "usuarios_vinculados": []
+  }
+},
+{
+  "model": "votaciones.nominado",
+  "pk": "6836ebf1-fa4b-48e7-9817-a482f5b55127",
+  "fields": {
+    "premio": "900ddf52-f914-485d-9026-801956a06bdb",
+    "nombre": "Katedra",
+    "descripcion": "",
+    "imagen": "",
+    "activo": true,
+    "fecha_creacion": "2025-07-05T21:51:53.191Z",
+    "usuarios_vinculados": []
+  }
+},
+{
+  "model": "votaciones.nominado",
+  "pk": "95d4cbc0-2d21-4c6e-86c8-8b51f4d6602b",
+  "fields": {
+    "premio": "900ddf52-f914-485d-9026-801956a06bdb",
+    "nombre": "El perro que le robó el bocadillo al presentador",
+    "descripcion": "",
+    "imagen": "",
+    "activo": true,
+    "fecha_creacion": "2025-07-04T17:47:07.878Z",
+    "usuarios_vinculados": [
+      "7361ad7d-5d22-47fa-b10c-982d9ed26ed8"
+    ]
+  }
+},
+{
+  "model": "votaciones.voto",
+  "pk": "09fd9b14-b038-4a24-8052-9b58b49c86cf",
+  "fields": {
+    "usuario": "7361ad7d-5d22-47fa-b10c-982d9ed26ed8",
+    "premio": "900ddf52-f914-485d-9026-801956a06bdb",
+    "nominado": "95d4cbc0-2d21-4c6e-86c8-8b51f4d6602b",
+    "fecha_voto": "2025-07-05T21:52:47.243Z",
+    "ronda": 2,
+    "orden_ronda2": 2
+  }
+},
+{
+  "model": "votaciones.voto",
+  "pk": "5ae2a871-7f58-41fb-9f52-50796cb11ad0",
+  "fields": {
+    "usuario": "7361ad7d-5d22-47fa-b10c-982d9ed26ed8",
+    "premio": "900ddf52-f914-485d-9026-801956a06bdb",
+    "nominado": "95d4cbc0-2d21-4c6e-86c8-8b51f4d6602b",
+    "fecha_voto": "2025-07-04T19:07:10.112Z",
+    "ronda": 1,
+    "orden_ronda2": null
+  }
+},
+{
+  "model": "votaciones.voto",
+  "pk": "86492598-5353-46c4-91bd-3a7d2fd4b0f2",
+  "fields": {
+    "usuario": "7361ad7d-5d22-47fa-b10c-982d9ed26ed8",
+    "premio": "900ddf52-f914-485d-9026-801956a06bdb",
+    "nominado": "60c358f7-d4e6-43f8-9c6e-65b5f6b5867e",
+    "fecha_voto": "2025-07-05T21:52:33.320Z",
+    "ronda": 2,
+    "orden_ronda2": 1
+  }
+},
+{
+  "model": "votaciones.voto",
+  "pk": "f0b2121a-5ea5-4142-9429-86d54908f0c7",
+  "fields": {
+    "usuario": "7361ad7d-5d22-47fa-b10c-982d9ed26ed8",
+    "premio": "900ddf52-f914-485d-9026-801956a06bdb",
+    "nominado": "6836ebf1-fa4b-48e7-9817-a482f5b55127",
+    "fecha_voto": "2025-07-05T21:52:56.578Z",
+    "ronda": 2,
+    "orden_ronda2": 3
+  }
+},
+{
+  "model": "votaciones.sugerencia",
+  "pk": "3aed30e8-a487-4051-a57b-ed61e8c83cc1",
+  "fields": {
+    "usuario": "7361ad7d-5d22-47fa-b10c-982d9ed26ed8",
+    "tipo": "premio",
+    "contenido": "Me gustaría que se añadiera una opción para ver los resultados parciales de la Ronda 1.",
+    "fecha_sugerencia": "2025-07-04T19:31:16.154Z",
+    "revisada": false,
+    "notas_admin": null
+  }
+}
+]
