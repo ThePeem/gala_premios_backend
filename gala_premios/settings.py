@@ -178,15 +178,25 @@ REST_FRAMEWORK = {
 # CORS Headers Configuration
 # https://github.com/adamchainz/django-cors-headers
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000", # Frontend de desarrollo
-    "https://tugala.vercel.app", # Frontend de producción (cambiar por tu dominio real)
-]
+# CUIDADO: Por defecto, CORS_ALLOWED_ORIGINS DEBE leerse de una variable de entorno en producción.
+# Si no quieres CORS_ALLOW_ALL_ORIGINS = True, necesitas definir los orígenes permitidos.
+# Vamos a leerlo de la variable de entorno 'CORS_ALLOWED_ORIGINS'.
+# Usamos .split(',') para convertir la cadena en una lista de strings.
+# .strip() elimina espacios en blanco alrededor de cada origen.
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS if origin.strip()]
 
-# Si necesitas permitir más orígenes dinámicamente o por patrón, puedes usar CORS_ALLOWED_ORIGIN_REGEXES
+
+# Si tienes muchos subdominios o patrones, puedes usar CORS_ALLOWED_ORIGIN_REGEXES
 # CORS_ALLOWED_ORIGIN_REGEXES = [
 #     r"^https://\w+\.vercel\.app$", # Ejemplo para permitir cualquier subdominio de vercel.app
 # ]
+
+# Esto es CRÍTICO: Si estás usando CORS_ALLOWED_ORIGINS, CORS_ALLOW_ALL_ORIGINS DEBE ser False.
+# Por defecto es False, pero es bueno ser explícito o asegurarse de que no lo has puesto a True.
+CORS_ALLOW_ALL_ORIGINS = False # Asegúrate de que esta línea esté presente y sea False
+# Si esta fuera True, CORS_ALLOWED_ORIGINS sería ignorado y se permitirían todos los orígenes con 'Access-Control-Allow-Origin: *'
+
 
 CORS_ALLOW_METHODS = [
     "DELETE",
@@ -209,4 +219,4 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-CORS_ALLOW_CREDENTIALS = True # Permite cookies, encabezados de autorización, etc.
+CORS_ALLOW_CREDENTIALS = True
