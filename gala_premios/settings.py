@@ -15,7 +15,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Importante: Para producción, la SECRET_KEY debe venir de una variable de entorno
 # Por ejemplo, en Render, la configurarías en el dashboard.
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-tu-clave-secreta-de-desarrollo-aqui')
+
+# ¡IMPORTANTE! Asegúrate de que no haya un valor por defecto inseguro aquí.
+# Si la variable de entorno no está definida, esto generará un error claro,
+# que es lo que queremos en producción.
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 AUTH_USER_MODEL = 'votaciones.Usuario' # <--- Asegúrate de que esta línea esté presente
 
@@ -60,10 +64,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # WhiteNoiseMiddleware debe estar justo debajo de SecurityMiddleware
-    'whitenoise.middleware.WhiteNoiseMiddleware', # ¡Añadido para Whitenoise!
+    'whitenoise.middleware.WhiteNoiseMiddleware', # <-- Asegúrate de que esté aquí
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # ¡Añadido para CORS! Debe ir después de SessionMiddleware y antes de CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware', # <-- y este después
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
