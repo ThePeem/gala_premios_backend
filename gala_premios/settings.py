@@ -64,14 +64,15 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # <-- Asegúrate de que esté aquí
+    'corsheaders.middleware.CorsMiddleware', # <-- ¡MOVER ESTE ARRIBA DEL TODO!
+    'whitenoise.middleware.WhiteNoiseMiddleware', # <-- Este puede ir aquí o más abajo, pero CORS es primero
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # <-- y este después
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # ... el resto de tus middlewares
 ]
 
 ROOT_URLCONF = 'gala_premios.urls'
