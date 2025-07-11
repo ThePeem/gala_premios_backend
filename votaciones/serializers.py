@@ -12,7 +12,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'foto_perfil']
+        fields = ['id', 'username', 'foto_perfil', 'verificado']
         read_only_fields = ['id', 'username']
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
@@ -25,7 +25,7 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'email', 'password', 'password2', 'descripcion', 'foto_perfil']
+        fields = ['username', 'email', 'password', 'password2', 'descripcion', 'foto_perfil',]
         extra_kwargs = {
             'email': {'required': True}
         }
@@ -92,11 +92,7 @@ class PremioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Premio
-        fields = [
-            'id', 'nombre', 'descripcion', 'fecha_entrega', 'activo',
-            'ronda_actual', 'estado', 'nominados', 'ya_votado_por_usuario'
-        ]
-        read_only_fields = ['id', 'activo', 'ronda_actual', 'estado']
+        fields = '__all__'
 
     def get_ya_votado_por_usuario(self, obj):
         request = self.context.get('request')
@@ -107,6 +103,10 @@ class PremioSerializer(serializers.ModelSerializer):
                 ronda=obj.ronda_actual
             ).exists()
         return False
+    
+    def get_nominados_con_votos(self, obj):
+        nominados = obj.nominados.all().order_by('nombre')
+        return NominadoSerializer(nominados, many=True).data
 
 # --- Serializer para el Modelo Voto ---
 

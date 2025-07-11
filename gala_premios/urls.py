@@ -20,7 +20,7 @@ from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
 
 # Vistas públicas y de usuario
-from votaciones.views import RegistroUsuarioView, ListaPremiosView, VotarView, ListaParticipantesView, MiPerfilView, MisNominacionesView, EnviarSugerenciaView, ResultadosView, ResultadosPublicosView
+from votaciones.views import RegistroUsuarioView, ListaPremiosView, VotarView, ListaParticipantesView, MiPerfilView, MisNominacionesView, EnviarSugerenciaView, ResultadosView, ResultadosPublicosView, UsuarioListCreateView, UsuarioDetailView
 
 # ¡NUEVA IMPORTACIÓN para las vistas administrativas!
 from votaciones import views_admin # Importamos el módulo completo
@@ -50,6 +50,10 @@ urlpatterns = [
     path('api/admin/premios/<uuid:id>/', views_admin.PremioRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_premios'),
     path('api/admin/nominados/', views_admin.NominadoListCreateAPIView.as_view(), name='admin_lista_crear_nominados'),
     path('api/admin/nominados/<uuid:id>/', views_admin.NominadoRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_nominados'),
+
+    # ** MODIFICAR: NUEVAS URLs para la administración de usuarios por API **
+    path('api/admin/users/', UsuarioListCreateView.as_view(), name='admin-user-list-create'),
+    path('api/admin/users/<int:pk>/', UsuarioDetailView.as_view(), name='admin-user-detail'),
 ]
 
 # ¡SOLO EN MODO DEBUG! Sirve archivos media y estáticos durante el desarrollo.

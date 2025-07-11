@@ -2,8 +2,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser 
-from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from django.db.models import Sum, Case, When, F 
 from django.utils import timezone # Para la fecha de publicación de resultados
@@ -49,6 +49,14 @@ class VotarView(APIView):
     permission_classes = [IsAuthenticated] # Solo usuarios autenticados pueden votar
 
     def post(self, request):
+        
+        user = request.user
+        if not user.verificado:
+            return Response(
+                {"detail": "Tu cuenta no ha sido verificada por un administrador y no puedes votar.", "code": "user_not_verified"},
+                status=status.HTTP_403_FORBIDDEN # 403 Forbidden
+            )
+        
         serializer = VotoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -341,3 +349,21 @@ class ResultadosPublicosView(APIView):
 
         serializer = ResultadosPremioSerializer(premios_publicados, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Vistas para la administración de usuarios por parte de administradores
+class UsuarioListCreateView(ListCreateAPIView): # MODIFICAR: Asegúrate de que hereda de ListCreateAPIView
+    queryset = Usuario.objects.all().order_by('username') # Ordena por username por defecto
+    serializer_class = UsuarioSerializer
+    permission_classes = [IsAdminUser] # Solo administradores pueden listar/crear usuarios
+
+    # Opcional: para la creación, puedes sobrescribir perform_create si necesitas lógica adicional,
+    # pero el UsuarioSerializer debería manejarlo bien con los campos especificados.
+    # Si permites la creación de usuarios desde aquí, asegúrate de que maneje contraseñas.
+    # El RegistroUsuarioSerializer es para el registro público, este es para admins.
+
+
+class UsuarioDetailView(RetrieveUpdateDestroyAPIView): # MODIFICAR: Asegúrate de que hereda de RetrieveUpdateDestroyAPIView
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
+    permission_classes = [IsAdminUser] # Solo administradores pueden ver/actualizar/eliminar usuarios
+    lookup_field = 'pk' # Busca usuarios por su ID (primary key)

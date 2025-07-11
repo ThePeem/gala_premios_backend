@@ -9,6 +9,10 @@ class Usuario(AbstractUser):
     # ... otros campos que hayas añadido (ej. foto_perfil)
     foto_perfil = models.ImageField(upload_to='perfiles/', null=True, blank=True)
 
+    # Nuevo campo para la verificación
+    verificado = models.BooleanField(default=False,
+                                     help_text="Indica si el usuario ha sido verificado por un administrador y puede votar.")
+
     # Resolución de colisiones de related_name para grupos y permisos
     # Es vital cuando se usa un Custom User Model
     groups = models.ManyToManyField(
