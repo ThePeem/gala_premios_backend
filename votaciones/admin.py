@@ -18,7 +18,6 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(Usuario, CustomUserAdmin)
 
 # Registramos cada modelo para que aparezca en el panel de administración
-admin.site.register(Usuario)
 admin.site.register(Premio)
 admin.site.register(Nominado)
 admin.site.register(Voto)
