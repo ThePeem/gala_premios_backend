@@ -1,4 +1,5 @@
-# gala_premios/votaciones/serializers.py
+# votaciones/serializers.py (MODIFICADO)
+
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from .models import Usuario, Premio, Nominado, Voto, Sugerencia
@@ -12,8 +13,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'foto_perfil', 'verificado']
-        read_only_fields = ['id', 'username']
+        fields = ['id', 'username', 'foto_perfil', 'verificado', 'first_name', 'last_name', 'email'] # Añadidos first_name, last_name, email para mostrar
+        read_only_fields = ['id', 'username', 'verificado'] # 'first_name', 'last_name', 'email' podrían ser editables en un perfil, pero no en este serializer público.
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
     """
@@ -25,9 +26,15 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'email', 'password', 'password2', 'descripcion', 'foto_perfil',]
+        # ¡CAMBIOS CLAVE AQUÍ!
+        # 1. 'descripcion' ELIMINADO.
+        # 2. 'first_name' y 'last_name' AÑADIDOS (son parte de AbstractUser y los necesitas para el registro).
+        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password2', 'foto_perfil']
         extra_kwargs = {
-            'email': {'required': True}
+            'email': {'required': True},
+            'first_name': {'required': True}, # Hacer nombre requerido si así lo deseas
+            'last_name': {'required': True},  # Hacer apellido requerido si así lo deseas
+            'foto_perfil': {'required': False} # foto_perfil es opcional en el modelo, así que aquí también
         }
 
     def validate(self, attrs):
@@ -37,11 +44,17 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         if Usuario.objects.filter(email=attrs['email']).exists():
             raise serializers.ValidationError({"email": "Ya existe un usuario con este correo electrónico."})
 
+        # Opcional: Validar que first_name y last_name no estén vacíos si los marcaste como required=True
+        # if not attrs.get('first_name'):
+        #     raise serializers.ValidationError({"first_name": "El nombre es obligatorio."})
+        # if not attrs.get('last_name'):
+        #     raise serializers.ValidationError({"last_name": "El apellido es obligatorio."})
+
         return attrs
 
     def create(self, validated_data):
         validated_data.pop('password2')
-        validated_data['rol'] = 'votante'
+
         user = Usuario.objects.create_user(**validated_data)
         return user
 
