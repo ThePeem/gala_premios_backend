@@ -2,6 +2,10 @@
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde archivo .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -178,24 +182,22 @@ REST_FRAMEWORK = {
 # CORS Headers Configuration
 # https://github.com/adamchainz/django-cors-headers
 
-# CUIDADO: Por defecto, CORS_ALLOWED_ORIGINS DEBE leerse de una variable de entorno en producción.
-# Si no quieres CORS_ALLOW_ALL_ORIGINS = True, necesitas definir los orígenes permitidos.
-# Vamos a leerlo de la variable de entorno 'CORS_ALLOWED_ORIGINS'.
-# Usamos .split(',') para convertir la cadena en una lista de strings.
-# .strip() elimina espacios en blanco alrededor de cada origen.
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+# Configuración de CORS
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS if origin.strip()]
 
+# Permitir subdominios de vercel.app en producción
+if not DEBUG:
+    CORS_ALLOWED_ORIGINS.extend([
+        'https://galapremiospiorn.vercel.app',
+        'https://*.vercel.app'
+    ])
 
-# Si tienes muchos subdominios o patrones, puedes usar CORS_ALLOWED_ORIGIN_REGEXES
-# CORS_ALLOWED_ORIGIN_REGEXES = [
-#     r"^https://\w+\.vercel\.app$", # Ejemplo para permitir cualquier subdominio de vercel.app
-# ]
-
-# Esto es CRÍTICO: Si estás usando CORS_ALLOWED_ORIGINS, CORS_ALLOW_ALL_ORIGINS DEBE ser False.
-# Por defecto es False, pero es bueno ser explícito o asegurarse de que no lo has puesto a True.
-CORS_ALLOW_ALL_ORIGINS = False # Asegúrate de que esta línea esté presente y sea False
-# Si esta fuera True, CORS_ALLOWED_ORIGINS sería ignorado y se permitirían todos los orígenes con 'Access-Control-Allow-Origin: *'
+# Configuración de CORS para desarrollo
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
 
 
 CORS_ALLOW_METHODS = [
