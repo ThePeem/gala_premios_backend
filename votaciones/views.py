@@ -16,6 +16,8 @@ from .models import Usuario, Premio, Nominado, Voto, Sugerencia
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 
+from django.utils.crypto import get_random_string
+
 # Vista para el registro de nuevos usuarios
 class RegistroUsuarioView(APIView):
     permission_classes = [AllowAny] # Permite que cualquiera (no autenticado) acceda a esta vista
@@ -93,7 +95,7 @@ class GoogleAuthView(APIView):
                     email=email,
                     first_name=given_name,
                     last_name=family_name,
-                    password=Usuario.objects.make_random_password()
+                    password = get_random_string(12)  # longitud 12, puedes cambiarla
                 )
 
             # Issue DRF token
