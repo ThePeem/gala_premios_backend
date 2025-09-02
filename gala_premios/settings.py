@@ -222,3 +222,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Google Sign-In
+# Client ID configurado en Render (producción) o .env (desarrollo)
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')

@@ -20,7 +20,7 @@ from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
 
 # Vistas públicas y de usuario
-from votaciones.views import RegistroUsuarioView, ListaPremiosView, VotarView, ListaParticipantesView, MiPerfilView, MisNominacionesView, EnviarSugerenciaView, ResultadosView, ResultadosPublicosView, UsuarioListCreateView, UsuarioDetailView
+from votaciones.views import RegistroUsuarioView, ListaPremiosView, VotarView, ListaParticipantesView, MiPerfilView, MisNominacionesView, EnviarSugerenciaView, ResultadosView, ResultadosPublicosView, UsuarioListCreateView, UsuarioDetailView, GoogleAuthView
 
 # ¡NUEVA IMPORTACIÓN para las vistas administrativas!
 from votaciones import views_admin # Importamos el módulo completo
@@ -34,6 +34,7 @@ urlpatterns = [
     # URLs de autenticación de DRF
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
     path('api/auth/register/', RegistroUsuarioView.as_view(), name='register'),
+    path('api/auth/google/', GoogleAuthView.as_view(), name='google_auth'),
 
     # URLs de usuario general
     path('api/premios/', ListaPremiosView.as_view(), name='lista_premios'),

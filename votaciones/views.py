@@ -7,9 +7,14 @@ from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, ListCr
 
 from django.db.models import Sum, Case, When, F 
 from django.utils import timezone # Para la fecha de publicación de resultados
+from django.conf import settings
 
 from .serializers import RegistroUsuarioSerializer, UsuarioSerializer, PremioSerializer, VotoSerializer, NominadoSerializer, SugerenciaSerializer, ResultadosPremioSerializer 
 from .models import Usuario, Premio, Nominado, Voto, Sugerencia
+
+# Google token verification
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 
 # Vista para el registro de nuevos usuarios
 class RegistroUsuarioView(APIView):
@@ -29,6 +34,77 @@ class RegistroUsuarioView(APIView):
 
         # Devolvemos una respuesta con los datos del usuario creado y un estado 201 CREATED
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class GoogleAuthView(APIView):
+    """
+    POST /api/auth/google/
+    Body: { "id_token": "<google_id_token>" }
+    Verifica el id_token de Google, crea/encuentra al usuario por email y devuelve token DRF.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        id_token = request.data.get('id_token')
+        if not id_token:
+            return Response({"detail": "Falta id_token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        google_client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
+        if not google_client_id:
+            return Response({"detail": "GOOGLE_CLIENT_ID no configurado"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        try:
+            # Verify the token
+            idinfo = google_id_token.verify_oauth2_token(
+                id_token,
+                google_requests.Request(),
+                google_client_id
+            )
+
+            # Additional checks
+            if idinfo.get('iss') not in ['accounts.google.com', 'https://accounts.google.com']:
+                return Response({"detail": "Emisor inválido"}, status=status.HTTP_400_BAD_REQUEST)
+
+            email_verified = idinfo.get('email_verified', False)
+            if not email_verified:
+                return Response({"detail": "Email de Google no verificado"}, status=status.HTTP_400_BAD_REQUEST)
+
+            email = idinfo.get('email')
+            given_name = idinfo.get('given_name') or ''
+            family_name = idinfo.get('family_name') or ''
+            picture = idinfo.get('picture')
+
+            if not email:
+                return Response({"detail": "Token sin email"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Find or create user
+            user = Usuario.objects.filter(email=email).first()
+            if not user:
+                # Generate a username from email
+                base_username = email.split('@')[0]
+                username_candidate = base_username
+                suffix = 1
+                while Usuario.objects.filter(username=username_candidate).exists():
+                    username_candidate = f"{base_username}{suffix}"
+                    suffix += 1
+
+                user = Usuario.objects.create_user(
+                    username=username_candidate,
+                    email=email,
+                    first_name=given_name,
+                    last_name=family_name,
+                    password=Usuario.objects.make_random_password()
+                )
+
+            # Issue DRF token
+            from rest_framework.authtoken.models import Token
+            token, _ = Token.objects.get_or_create(user=user)
+
+            user_data = UsuarioSerializer(user).data
+            return Response({"token": token.key, "user": user_data}, status=status.HTTP_200_OK)
+
+        except ValueError as e:
+            return Response({"detail": "id_token inválido", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Vista para listar todos los premios con sus nominados
 class ListaPremiosView(APIView):
