@@ -13,8 +13,19 @@ class UsuarioSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'foto_perfil', 'verificado', 'first_name', 'last_name', 'email'] # Añadidos first_name, last_name, email para mostrar
-        read_only_fields = ['id', 'username', 'verificado'] # 'first_name', 'last_name', 'email' podrían ser editables en un perfil, pero no en este serializer público.
+        fields = ['id', 'username', 'foto_perfil', 'verificado', 'first_name', 'last_name', 'email', 'is_staff'] # Añadidos first_name, last_name, email para mostrar
+        read_only_fields = ['id', 'username', 'verificado', 'is_staff'] # 'first_name', 'last_name', 'email' podrían ser editables en un perfil, pero no en este serializer público.
+
+
+class AdminUsuarioSerializer(serializers.ModelSerializer):
+    """
+    Serializer para administración de usuarios.
+    Permite a administradores editar 'verificado' e 'is_staff' (y datos básicos si se desea).
+    """
+    class Meta:
+        model = Usuario
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'foto_perfil', 'verificado', 'is_staff']
+        read_only_fields = ['id', 'username']
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
     """

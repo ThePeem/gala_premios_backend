@@ -54,7 +54,7 @@ urlpatterns = [
 
     # ** MODIFICAR: NUEVAS URLs para la administración de usuarios por API **
     path('api/admin/users/', UsuarioListCreateView.as_view(), name='admin-user-list-create'),
-    path('api/admin/users/<int:pk>/', UsuarioDetailView.as_view(), name='admin-user-detail'),
+    path('api/admin/users/<uuid:pk>/', UsuarioDetailView.as_view(), name='admin-user-detail'),
 ]
 
 # ¡SOLO EN MODO DEBUG! Sirve archivos media y estáticos durante el desarrollo.

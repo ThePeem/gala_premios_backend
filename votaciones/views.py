@@ -9,7 +9,7 @@ from django.db.models import Sum, Case, When, F
 from django.utils import timezone # Para la fecha de publicación de resultados
 from django.conf import settings
 
-from .serializers import RegistroUsuarioSerializer, UsuarioSerializer, PremioSerializer, VotoSerializer, NominadoSerializer, SugerenciaSerializer, ResultadosPremioSerializer 
+from .serializers import RegistroUsuarioSerializer, UsuarioSerializer, AdminUsuarioSerializer, PremioSerializer, VotoSerializer, NominadoSerializer, SugerenciaSerializer, ResultadosPremioSerializer 
 from .models import Usuario, Premio, Nominado, Voto, Sugerencia
 
 # Google token verification
@@ -112,7 +112,7 @@ class GoogleAuthView(APIView):
 class ListaPremiosView(APIView):
     # Por defecto, DRF ya usa IsAuthenticated debido a tu settings.py,
     # pero es buena práctica especificarlo explícitamente para claridad.
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         # Filtramos solo los premios que están activos y abiertos para votación
@@ -250,7 +250,7 @@ class ListaParticipantesView(APIView):
         # Opcional: Podrías filtrar por usuarios que tienen rol 'votante'
         # o que tienen 'descripcion' o 'foto_perfil' para que no salgan superusuarios "vacíos"
         # usuarios = Usuario.objects.filter(rol='votante', activo=True).order_by('username')
-        usuarios = Usuario.objects.all().order_by('username') # Para mostrar todos los usuarios
+        usuarios = Usuario.objects.filter(verificado=True).order_by('username') # Solo participantes verificados
         serializer = UsuarioSerializer(usuarios, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -429,10 +429,10 @@ class ResultadosPublicosView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Vistas para la administración de usuarios por parte de administradores
-class UsuarioListCreateView(ListCreateAPIView): # MODIFICAR: Asegúrate de que hereda de ListCreateAPIView
-    queryset = Usuario.objects.all().order_by('username') # Ordena por username por defecto
-    serializer_class = UsuarioSerializer
-    permission_classes = [IsAdminUser] # Solo administradores pueden listar/crear usuarios
+class UsuarioListCreateView(ListCreateAPIView): 
+    queryset = Usuario.objects.all().order_by('username') 
+    serializer_class = AdminUsuarioSerializer
+    permission_classes = [IsAdminUser] 
 
     # Opcional: para la creación, puedes sobrescribir perform_create si necesitas lógica adicional,
     # pero el UsuarioSerializer debería manejarlo bien con los campos especificados.
@@ -440,8 +440,8 @@ class UsuarioListCreateView(ListCreateAPIView): # MODIFICAR: Asegúrate de que h
     # El RegistroUsuarioSerializer es para el registro público, este es para admins.
 
 
-class UsuarioDetailView(RetrieveUpdateDestroyAPIView): # MODIFICAR: Asegúrate de que hereda de RetrieveUpdateDestroyAPIView
+class UsuarioDetailView(RetrieveUpdateDestroyAPIView): 
     queryset = Usuario.objects.all()
-    serializer_class = UsuarioSerializer
-    permission_classes = [IsAdminUser] # Solo administradores pueden ver/actualizar/eliminar usuarios
-    lookup_field = 'pk' # Busca usuarios por su ID (primary key)
+    serializer_class = AdminUsuarioSerializer
+    permission_classes = [IsAdminUser] 
+    lookup_field = 'pk' 
