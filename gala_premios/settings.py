@@ -186,19 +186,21 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS if origin.strip()]
 
-# Permitir subdominios de vercel.app en producción
-if not DEBUG:
-    CORS_ALLOWED_ORIGINS.extend([
-        'https://galapremiospiorn.vercel.app',
-        'https://*.vercel.app'
-    ])
+# Permitir dominio de producción de Vercel explícitamente
+if 'https://galapremiospiorn.vercel.app' not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append('https://galapremiospiorn.vercel.app')
+
+# Para permitir previews de Vercel (subdominios aleatorios), usar regex
+# NOTA: 'https://*.vercel.app' no funciona en CORS_ALLOWED_ORIGINS; hay que usar CORS_ALLOWED_ORIGIN_REGEXES
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\\.vercel\\.app$",
+]
 
 # Configuración de CORS para desarrollo
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOW_ALL_ORIGINS = False
-
 
 CORS_ALLOW_METHODS = [
     "DELETE",
