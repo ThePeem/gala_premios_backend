@@ -103,12 +103,28 @@ WSGI_APPLICATION = 'gala_premios.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# NEW: database url parser
+try:
+    import dj_database_url  # type: ignore
+except Exception:
+    dj_database_url = None
+
+# Por defecto, SQLite en desarrollo
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Si hay DATABASE_URL (Render/Postgres), úsalo
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL and dj_database_url is not None:
+    # Aplica SSL solo para Postgres. Para sqlite u otros, evita ssl_require para no romper (sslmode en sqlite)
+    if DATABASE_URL.startswith(('postgres://', 'postgresql://')):
+        DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+    else:
+        DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
