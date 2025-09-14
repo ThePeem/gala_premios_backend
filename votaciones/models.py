@@ -8,6 +8,10 @@ class Usuario(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # ... otros campos que hayas añadido (ej. foto_perfil)
     foto_perfil = models.ImageField(upload_to='perfiles/', null=True, blank=True)
+    # Nueva URL de foto (Cloudinary/S3/etc.) para no depender de almacenamiento local
+    foto_url = models.URLField(blank=True, null=True, verbose_name="URL de Foto de Perfil")
+    # Descripción/bio del usuario para mostrar en su perfil
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción del Perfil")
 
     # Nuevo campo para la verificación
     verificado = models.BooleanField(default=False,
@@ -51,6 +55,16 @@ class Premio(models.Model):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nombre = models.CharField(max_length=255, unique=True, verbose_name="Nombre del Premio")
+    # Tipo de premio: directo (usuarios) o indirecto (frases/obras/etc)
+    TIPO_CHOICES = [
+        ('directo', 'Directo (Usuarios)'),
+        ('indirecto', 'Indirecto (Frases/Objetos)'),
+    ]
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='directo', verbose_name="Tipo de Premio")
+    # Identificador estable para URLs amigables y assets estáticos
+    slug = models.SlugField(max_length=255, unique=True, blank=True, null=True, verbose_name="Slug")
+    # URL absoluta de imagen (Cloudinary/S3/etc). Alternativa a usar assets estáticos
+    image_url = models.URLField(blank=True, null=True, verbose_name="URL de Imagen")
     descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
     fecha_entrega = models.DateField(blank=True, null=True, verbose_name="Fecha de Entrega")
     activo = models.BooleanField(default=True, verbose_name="Activo")

@@ -13,8 +13,9 @@ class UsuarioSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'foto_perfil', 'verificado', 'first_name', 'last_name', 'email', 'is_staff'] # Añadidos first_name, last_name, email para mostrar
-        read_only_fields = ['id', 'username', 'verificado', 'is_staff'] # 'first_name', 'last_name', 'email' podrían ser editables en un perfil, pero no en este serializer público.
+        fields = ['id', 'username', 'foto_perfil', 'foto_url', 'descripcion', 'verificado', 'first_name', 'last_name', 'email', 'is_staff']
+        # Campos de solo lectura en el perfil del usuario actual
+        read_only_fields = ['id', 'username', 'verificado', 'is_staff']
 
 
 class AdminUsuarioSerializer(serializers.ModelSerializer):
@@ -24,7 +25,7 @@ class AdminUsuarioSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'foto_perfil', 'verificado', 'is_staff']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'foto_perfil', 'foto_url', 'descripcion', 'verificado', 'is_staff']
         read_only_fields = ['id', 'username']
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
