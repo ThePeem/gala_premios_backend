@@ -206,3 +206,26 @@ class ResultadosPremioSerializer(serializers.ModelSerializer):
             'fecha_resultados_publicados'
         ]
         read_only_fields = fields # Este serializer es solo para lectura
+
+
+# --- Serializer para "Mis Nominaciones" simplificado para el perfil ---
+class MisNominacionSerializer(serializers.ModelSerializer):
+    premio_nombre = serializers.CharField(source='premio.nombre', read_only=True)
+    nominado_nombre = serializers.CharField(source='nombre', read_only=True)
+    fecha_voto = serializers.SerializerMethodField()
+    ronda = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Nominado
+        fields = ['id', 'premio_nombre', 'nominado_nombre', 'fecha_voto', 'ronda']
+        read_only_fields = fields
+
+    def get_fecha_voto(self, obj: Nominado):
+        # Última fecha en la que este nominado recibió un voto (de cualquier ronda)
+        last_vote = Voto.objects.filter(nominado=obj).order_by('-fecha_voto').first()
+        return last_vote.fecha_voto.isoformat() if last_vote else obj.fecha_creacion.isoformat() if obj.fecha_creacion else None
+
+    def get_ronda(self, obj: Nominado):
+        # Si tiene votos en ronda 2, devolvemos 2; si no, 1 si está nominado.
+        has_r2 = Voto.objects.filter(nominado=obj, ronda=2).exists()
+        return 2 if has_r2 else 1

@@ -9,7 +9,11 @@ from django.db.models import Sum, Case, When, F
 from django.utils import timezone # Para la fecha de publicación de resultados
 from django.conf import settings
 
-from .serializers import RegistroUsuarioSerializer, UsuarioSerializer, AdminUsuarioSerializer, PremioSerializer, VotoSerializer, NominadoSerializer, SugerenciaSerializer, ResultadosPremioSerializer 
+from .serializers import (
+    RegistroUsuarioSerializer, UsuarioSerializer, AdminUsuarioSerializer,
+    PremioSerializer, VotoSerializer, NominadoSerializer, SugerenciaSerializer,
+    ResultadosPremioSerializer, MisNominacionSerializer
+)
 from .models import Usuario, Premio, Nominado, Voto, Sugerencia
 
 # Google token verification
@@ -271,8 +275,43 @@ class MisNominacionesView(APIView):
     def get(self, request):
         # Filtra los nominados donde el usuario autenticado está vinculado
         nominaciones = Nominado.objects.filter(usuarios_vinculados=request.user).order_by('nombre')
-        serializer = NominadoSerializer(nominaciones, many=True)
+        serializer = MisNominacionSerializer(nominaciones, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MisEstadisticasView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Nominaciones del usuario
+        nominaciones_qs = Nominado.objects.filter(usuarios_vinculados=user)
+        total_nominaciones = nominaciones_qs.count()
+
+        # Votos recibidos: todos los votos a nominados vinculados a este usuario
+        total_votos_recibidos = Voto.objects.filter(nominado__in=nominaciones_qs).count()
+
+        # Medallas: contar en Premios si alguno de sus ganadores apunta a un nominado vinculado al usuario
+        oros = Premio.objects.filter(ganador_oro__in=nominaciones_qs).count()
+        platas = Premio.objects.filter(ganador_plata__in=nominaciones_qs).count()
+        bronces = Premio.objects.filter(ganador_bronce__in=nominaciones_qs).count()
+
+        # Flags de fase
+        mostrar_ronda2 = Premio.objects.filter(ronda_actual=2, estado='abierto').exists()
+        mostrar_medallas = Premio.objects.filter(estado='resultados').exists()
+
+        data = {
+            "total_nominaciones": total_nominaciones,
+            "total_votos_recibidos": total_votos_recibidos,
+            "oros": oros,
+            "platas": platas,
+            "bronces": bronces,
+            "fase": {
+                "mostrar_medallas": mostrar_medallas,
+                "mostrar_ronda2": mostrar_ronda2,
+            },
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 # Vista para que los usuarios envíen sugerencias
 class EnviarSugerenciaView(CreateAPIView):
