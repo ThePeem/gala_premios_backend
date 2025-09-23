@@ -71,6 +71,9 @@ class Premio(models.Model):
     ronda_actual = models.PositiveIntegerField(default=1, verbose_name="Ronda Actual de Votación")
     estado = models.CharField(max_length=50, choices=ESTADO_CHOICES, default='abierto', verbose_name="Estado")
 
+    # Nuevo: cantidad de usuarios vinculados requeridos por nominado para este premio (1 por defecto; p.ej. Pareja del Año = 2)
+    vinculos_requeridos = models.PositiveIntegerField(default=1, verbose_name="Usuarios vinculados requeridos")
+
     # ¡NUEVOS CAMPOS para los ganadores!
     ganador_oro = models.ForeignKey(
         'Nominado',
