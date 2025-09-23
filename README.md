@@ -1,99 +1,62 @@
 # Gala Premios Piorn - Backend
 
-Backend Django para el sistema de votación de la Gala Premios Piorn.
+Backend en Django/DRF para el sistema de votación de la Gala Premios Piorn.
 
-## 🚀 Despliegue Rápido
+## 🌐 Entorno de producción
 
-### 1. Clonar y configurar
-```bash
-git clone <tu-repositorio-backend>
-cd gala_premios
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-pip install -r requirements.txt
+- API: https://galapremiospiorn.onrender.com
+- Admin Django: https://galapremiospiorn.onrender.com/admin/
+
+## 🔧 Variables de entorno (Render)
+
+```
+SECRET_KEY=...
+DEBUG=false
+ALLOWED_HOSTS=galapremiospiorn.onrender.com
+CORS_ALLOWED_ORIGINS=https://galapremiospiorn.vercel.app
+DATABASE_URL=... # Render (PostgreSQL)
 ```
 
-### 2. Configurar variables de entorno
-```bash
-cp env.example .env
-# Editar .env con tus valores
+## 🚀 Despliegue en Render
+
+- Conecta el repo y configura las variables anteriores.
+- Comando de build: opcional (colecta estáticos en el start)
+- Comando de inicio:
 ```
-
-### 3. Ejecutar migraciones
-```bash
-python manage.py migrate
-python manage.py collectstatic --noinput
-```
-
-### 4. Crear superusuario
-```bash
-python manage.py createsuperuser
-```
-
-### 5. Ejecutar servidor
-```bash
-python manage.py runserver
-```
-
-## 🌐 Despliegue en Render
-
-### Variables de entorno necesarias:
-- `SECRET_KEY`: Clave secreta de Django
-- `DEBUG`: false
-- `ALLOWED_HOSTS`: galapremiospiorn.onrender.com
-- `CORS_ALLOWED_ORIGINS`: https://galapremiospiorn.vercel.app
-
-### Comando de inicio:
-```bash
 gunicorn gala_premios.wsgi:application
 ```
-
-## 📚 API Endpoints
-
-### Autenticación
-- `POST /api-token-auth/` - Login
-- `POST /api/auth/register/` - Registro
-
-### Usuario
-- `GET /api/mi-perfil/` - Perfil del usuario
-- `GET /api/mis-nominaciones/` - Nominaciones del usuario
-
-### Votación
-- `GET /api/premios/` - Lista de premios
-- `POST /api/votar/` - Emitir voto
-- `GET /api/participantes/` - Lista de participantes
-
-### Resultados
-- `GET /api/resultados/` - Resultados (cálculo)
-- `POST /api/resultados/` - Publicar resultados (admin)
-- `GET /api/resultados-publicos/` - Resultados públicos
-
-### Administración
-- `GET/POST /api/admin/premios/` - CRUD premios
-- `GET/POST /api/admin/nominados/` - CRUD nominados
-- `GET/POST /api/admin/users/` - CRUD usuarios
-
-## 🔧 Desarrollo
-
-### Script de despliegue automático:
-```bash
-chmod +x deploy.sh
-./deploy.sh
+- Ejecuta migraciones en cada deploy (Startup Command o Job):
+```
+python manage.py migrate
 ```
 
-### Estructura del proyecto:
+## 📚 API (principales)
+
+- Auth: `POST /api-token-auth/`, `POST /api/auth/register/`
+- Participantes: `GET /api/participantes/`
+- Premios (admin): `GET/POST /api/admin/premios/`, `PATCH/DELETE /api/admin/premios/{id}/`
+- Nominados (admin): `GET/POST /api/admin/nominados/`, `PATCH/DELETE /api/admin/nominados/{id}/`
+- Usuarios (admin): `GET /api/admin/users/`, `PATCH /api/admin/users/{id}/`
+
+## 🧩 Modelado clave
+
+- `Premio` incluye `vinculos_requeridos` (por defecto 1) para soportar premios como “Pareja del Año” (2 vinculados por nominado).
+- `Nominado.usuarios_vinculados` es ManyToMany a `Usuario` (permite 1 o más). 
+
+Sugerencia de validación (opcional): en el serializer de `Nominado`, validar que el número de `usuarios_vinculados` coincida con `premio.vinculos_requeridos` para premios directos.
+
+## 🔧 Desarrollo local (opcional)
+
 ```
-gala_premios/
-├── gala_premios/     # Configuración principal
-├── votaciones/       # App principal
-├── manage.py         # Script de Django
-├── requirements.txt  # Dependencias
-└── Procfile         # Configuración para Render
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
 ```
 
 ## 📝 Notas
 
-- El backend está configurado para funcionar con el frontend en Vercel
-- CORS está configurado para permitir comunicación entre dominios
-- Los archivos estáticos se sirven con Whitenoise
-- La base de datos en producción es PostgreSQL (Render)
+- CORS configurado para el frontend en Vercel.
+- Whitenoise para estáticos.
+- Base de datos en producción: PostgreSQL (Render).
