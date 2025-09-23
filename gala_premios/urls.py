@@ -52,6 +52,8 @@ urlpatterns = [
     path('api/admin/premios/<uuid:id>/', views_admin.PremioRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_premios'),
     path('api/admin/nominados/', views_admin.NominadoListCreateAPIView.as_view(), name='admin_lista_crear_nominados'),
     path('api/admin/nominados/<uuid:id>/', views_admin.NominadoRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_nominados'),
+    path('api/admin/sugerencias/', views_admin.SugerenciaListAPIView.as_view(), name='admin_lista_sugerencias'),
+    path('api/admin/sugerencias/<uuid:id>/', views_admin.SugerenciaRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_sugerencia'),
 
     # ** MODIFICAR: NUEVAS URLs para la administración de usuarios por API **
     path('api/admin/users/', UsuarioListCreateView.as_view(), name='admin-user-list-create'),
