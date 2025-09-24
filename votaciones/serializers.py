@@ -13,7 +13,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'foto_perfil', 'foto_url', 'descripcion', 'verificado', 'first_name', 'last_name', 'email', 'is_staff']
+        fields = ['id', 'username', 'foto_perfil', 'foto_url', 'descripcion', 'verificado', 'first_name', 'last_name', 'email', 'is_staff', 'participante_tag']
         # Campos de solo lectura en el perfil del usuario actual
         read_only_fields = ['id', 'username', 'verificado', 'is_staff']
 
@@ -25,7 +25,7 @@ class AdminUsuarioSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'foto_perfil', 'foto_url', 'descripcion', 'verificado', 'is_staff']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'foto_perfil', 'foto_url', 'descripcion', 'verificado', 'is_staff', 'participante_tag']
         read_only_fields = ['id', 'username']
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):

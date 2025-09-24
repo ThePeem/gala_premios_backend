@@ -17,6 +17,35 @@ class Usuario(AbstractUser):
     verificado = models.BooleanField(default=False,
                                      help_text="Indica si el usuario ha sido verificado por un administrador y puede votar.")
 
+    # Vinculación explícita con un slot de participante visible en la web
+    PARTICIPANTE_CHOICES = (
+        ('Jose', 'Jose'),
+        ('Garcia', 'Garcia'),
+        ('Felipe', 'Felipe'),
+        ('Catedra', 'Catedra'),
+        ('Richi', 'Richi'),
+        ('Alex', 'Alex'),
+        ('Chema', 'Chema'),
+        ('Dani', 'Dani'),
+        ('Alejandra', 'Alejandra'),
+        ('Sandra', 'Sandra'),
+        ('Rocio', 'Rocio'),
+        ('Joaquin', 'Joaquin'),
+        ('Silvia', 'Silvia'),
+        ('Gema', 'Gema'),
+        ('Ana', 'Ana'),
+        ('Tomas', 'Tomas'),
+        # Añade aquí los dos restantes si se suben (hasta 18)
+    )
+    participante_tag = models.CharField(
+        max_length=32,
+        choices=PARTICIPANTE_CHOICES,
+        null=True,
+        blank=True,
+        unique=True,
+        help_text="Etiqueta del slot de participante asignado (único)."
+    )
+
     # Resolución de colisiones de related_name para grupos y permisos
     # Es vital cuando se usa un Custom User Model
     groups = models.ManyToManyField(
