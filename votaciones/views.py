@@ -126,6 +126,15 @@ class ListaPremiosView(APIView):
         serializer = PremioSerializer(premios, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class ListaTodosPremiosView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        # Lista todos los premios activos, independientemente del estado
+        premios = Premio.objects.filter(activo=True).order_by('nombre')
+        serializer = PremioSerializer(premios, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 # Vista para emitir un voto
 class VotarView(APIView):
     permission_classes = [IsAuthenticated] # Solo usuarios autenticados pueden votar

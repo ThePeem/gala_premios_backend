@@ -135,6 +135,21 @@ class Premio(models.Model):
         verbose_name="Fecha de Publicación de Resultados"
     )
 
+    # Historial de ganadores (lista de objetos con {year, name})
+    # Requiere Django 3.1+ para JSONField en todos los backends.
+    try:
+        from django.db.models import JSONField as BuiltinJSONField  # type: ignore
+        JSONField = BuiltinJSONField  # type: ignore
+    except Exception:  # pragma: no cover
+        from django.contrib.postgres.fields import JSONField  # type: ignore
+
+    ganadores_historicos = JSONField(
+        default=list,
+        blank=True,
+        null=True,
+        help_text="Lista de los últimos ganadores: [{ 'year': 2024, 'name': 'Nombre' }, ...]"
+    )
+
 
     def __str__(self):
         return self.nombre

@@ -1,6 +1,7 @@
 # votaciones/serializers.py (MODIFICADO)
 
 from rest_framework import serializers
+from django.db import models
 from django.contrib.auth.password_validation import validate_password
 from .models import Usuario, Premio, Nominado, Voto, Sugerencia
 
@@ -112,6 +113,7 @@ class PremioSerializer(serializers.ModelSerializer):
     Incluye los nominados anidados y un campo para verificar si el usuario ya votó.
     """
     nominados = NominadoSerializer(many=True, read_only=True) # Ahora NominadoSerializer ya está definido
+    nominados_visible = serializers.SerializerMethodField()
 
     ya_votado_por_usuario = serializers.SerializerMethodField()
 
@@ -130,6 +132,36 @@ class PremioSerializer(serializers.ModelSerializer):
         return False
     
     def get_nominados_con_votos(self, obj):
+        nominados = obj.nominados.all().order_by('nombre')
+        return NominadoSerializer(nominados, many=True).data
+
+    def get_nominados_visible(self, obj: Premio):
+        """
+        Determina qué nominados mostrar públicamente según la fase:
+        - Antes o durante Ronda 1 (estado abierto/cerrado con ronda_actual=1): mostrar todos (hasta 16)
+        - Ronda 2: mostrar top 4 por votos de ronda 1
+        - Resultados publicados: mostrar solo el campeón (ganador_oro)
+        """
+        # Resultados definitivos
+        if obj.estado == 'resultados' and obj.ganador_oro:
+            return NominadoSerializer([obj.ganador_oro], many=True).data
+
+        # Si estamos en R2 o se ha cerrado R1, mostrar top 4 de R1
+        if obj.ronda_actual == 2 or (obj.estado in ['abierto', 'cerrado'] and Voto.objects.filter(premio=obj, ronda=1).exists()):
+            # agregación de votos de ronda 1
+            qs = (
+                Voto.objects.filter(premio=obj, ronda=1)
+                .values('nominado')
+                .annotate(total=models.Count('id'))
+                .order_by('-total')[:4]
+            )
+            ids = [row['nominado'] for row in qs]
+            nominados = list(Nominado.objects.filter(id__in=ids))
+            # conservar orden por total desc
+            ordered = sorted(nominados, key=lambda n: ids.index(n.id))
+            return NominadoSerializer(ordered, many=True).data
+
+        # Por defecto: mostrar todos activos
         nominados = obj.nominados.all().order_by('nombre')
         return NominadoSerializer(nominados, many=True).data
 

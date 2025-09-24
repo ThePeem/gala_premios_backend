@@ -20,7 +20,7 @@ from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
 
 # Vistas públicas y de usuario
-from votaciones.views import RegistroUsuarioView, ListaPremiosView, VotarView, ListaParticipantesView, MiPerfilView, MisNominacionesView, EnviarSugerenciaView, ResultadosView, ResultadosPublicosView, UsuarioListCreateView, UsuarioDetailView, GoogleAuthView, MisEstadisticasView
+from votaciones.views import RegistroUsuarioView, ListaPremiosView, VotarView, ListaParticipantesView, MiPerfilView, MisNominacionesView, EnviarSugerenciaView, ResultadosView, ResultadosPublicosView, UsuarioListCreateView, UsuarioDetailView, GoogleAuthView, MisEstadisticasView, ListaTodosPremiosView
 
 # ¡NUEVA IMPORTACIÓN para las vistas administrativas!
 from votaciones import views_admin # Importamos el módulo completo
@@ -38,6 +38,7 @@ urlpatterns = [
 
     # URLs de usuario general
     path('api/premios/', ListaPremiosView.as_view(), name='lista_premios'),
+    path('api/premios-todos/', ListaTodosPremiosView.as_view(), name='lista_todos_premios'),
     path('api/votar/', VotarView.as_view(), name='votar'),
     path('api/participantes/', ListaParticipantesView.as_view(), name='lista_participantes'),
     path('api/mi-perfil/', MiPerfilView.as_view(), name='mi_perfil'),
