@@ -21,6 +21,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 
 # Vistas públicas y de usuario
 from votaciones.views import RegistroUsuarioView, ListaPremiosView, VotarView, ListaParticipantesView, MiPerfilView, MisNominacionesView, EnviarSugerenciaView, ResultadosView, ResultadosPublicosView, UsuarioListCreateView, UsuarioDetailView, GoogleAuthView, MisEstadisticasView, ListaTodosPremiosView
+from votaciones.views_mejoras import VerificarVotoView, MisVotosView, CambiarEstadoPremioView, EstadisticasAdminView
 
 # ¡NUEVA IMPORTACIÓN para las vistas administrativas!
 from votaciones import views_admin # Importamos el módulo completo
@@ -42,23 +43,24 @@ urlpatterns = [
     path('api/votar/', VotarView.as_view(), name='votar'),
     path('api/participantes/', ListaParticipantesView.as_view(), name='lista_participantes'),
     path('api/mi-perfil/', MiPerfilView.as_view(), name='mi_perfil'),
-    path('api/mis-nominaciones/', MisNominacionesView.as_view(), name='mis_nominaciones'),
     path('api/mis-estadisticas/', MisEstadisticasView.as_view(), name='mis_estadisticas'),
     path('api/sugerencias/', EnviarSugerenciaView.as_view(), name='enviar_sugerencia'),
     path('api/resultados/', ResultadosView.as_view(), name='resultados'), # GET es cálculo, POST es publicar (para admins)
     path('api/resultados-publicos/', ResultadosPublicosView.as_view(), name='resultados_publicos'),
 
-    # ¡NUEVAS URLs para la administración vía API!
-    path('api/admin/premios/', views_admin.PremioListCreateAPIView.as_view(), name='admin_lista_crear_premios'),
-    path('api/admin/premios/<uuid:id>/', views_admin.PremioRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_premios'),
-    path('api/admin/nominados/', views_admin.NominadoListCreateAPIView.as_view(), name='admin_lista_crear_nominados'),
-    path('api/admin/nominados/<uuid:id>/', views_admin.NominadoRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_nominados'),
-    path('api/admin/sugerencias/', views_admin.SugerenciaListAPIView.as_view(), name='admin_lista_sugerencias'),
-    path('api/admin/sugerencias/<uuid:id>/', views_admin.SugerenciaRetrieveUpdateDestroyAPIView.as_view(), name='admin_detalle_sugerencia'),
-
-    # ** MODIFICAR: NUEVAS URLs para la administración de usuarios por API **
-    path('api/admin/users/', UsuarioListCreateView.as_view(), name='admin-user-list-create'),
-    path('api/admin/users/<uuid:pk>/', UsuarioDetailView.as_view(), name='admin-user-detail'),
+    # URLs de administración (solo para superusuarios)
+    path('api/admin/usuarios/', UsuarioListCreateView.as_view(), name='admin_usuarios_list'),
+    path('api/admin/usuarios/<uuid:pk>/', UsuarioDetailView.as_view(), name='admin_usuarios_detail'),
+    
+    # URLs para el panel de administración
+    path('api/admin/estadisticas/', views_admin.estadisticas, name='admin_estadisticas'),
+    path('api/admin/avanzar-fase/', views_admin.avanzar_fase, name='avanzar_fase'),
+    
+    # Nuevas URLs para las mejoras
+    path('api/verificar-voto/<uuid:premio_id>/', VerificarVotoView.as_view(), name='verificar_voto'),
+    path('api/mis-votos/', MisVotosView.as_view(), name='mis_votos'),
+    path('api/admin/cambiar-estado-premio/<uuid:premio_id>/', CambiarEstadoPremioView.as_view(), name='cambiar_estado_premio'),
+    path('api/admin/estadisticas-detalladas/', EstadisticasAdminView.as_view(), name='estadisticas_detalladas'),
 ]
 
 # ¡SOLO EN MODO DEBUG! Sirve archivos media y estáticos durante el desarrollo.
