@@ -195,21 +195,15 @@ REST_FRAMEWORK = {
 }
 
 
-# CORS Headers Configuration
+# CORS Headers# Configuración de CORS
 # https://github.com/adamchainz/django-cors-headers
 
 # Configuración de CORS
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS if origin.strip()]
-
-# Permitir dominio de producción de Vercel explícitamente
-if 'https://galapremiospiorn.vercel.app' not in CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS.append('https://galapremiospiorn.vercel.app')
-
-# Para permitir previews de Vercel (subdominios aleatorios), usar regex
-# NOTA: 'https://*.vercel.app' no funciona en CORS_ALLOWED_ORIGINS; hay que usar CORS_ALLOWED_ORIGIN_REGEXES
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.*\\.vercel\\.app$",
+CORS_ALLOWED_ORIGINS = [
+    'https://galapremiospiorn.vercel.app',
+    'https://galapremiospiorn.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 ]
 
 # Configuración de CORS para desarrollo
@@ -218,6 +212,12 @@ if DEBUG:
 else:
     CORS_ALLOW_ALL_ORIGINS = False
 
+# Configuración de CORS para previews de Vercel
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://[a-z0-9-]+\\.vercel\\.app$",
+]
+
+# Métodos HTTP permitidos
 CORS_ALLOW_METHODS = [
     "DELETE",
     "GET",
@@ -227,6 +227,7 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 
+# Cabeceras permitidas
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
@@ -239,7 +240,14 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
+# Permitir credenciales
 CORS_ALLOW_CREDENTIALS = True
+
+# Orígenes de confianza para CSRF
+CSRF_TRUSTED_ORIGINS = [
+    'https://galapremiospiorn.vercel.app',
+    'https://galapremiospiorn.on.render.com',
+]
 
 # Google Sign-In
 # Client ID configurado en Render (producción) o .env (desarrollo)
