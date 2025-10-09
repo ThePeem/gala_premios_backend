@@ -56,6 +56,15 @@ urlpatterns = [
     # URLs para el panel de administración
     path('api/admin/estadisticas/', views_admin.estadisticas, name='admin_estadisticas'),
     path('api/admin/avanzar-fase/', views_admin.avanzar_fase, name='avanzar_fase'),
+    # CRUD Admin Premios
+    path('api/admin/premios/', views_admin.PremioListCreateAPIView.as_view(), name='admin_premios_list_create'),
+    path('api/admin/premios/<uuid:id>/', views_admin.PremioRetrieveUpdateDestroyAPIView.as_view(), name='admin_premios_rud'),
+    # CRUD Admin Nominados
+    path('api/admin/nominados/', views_admin.NominadoListCreateAPIView.as_view(), name='admin_nominados_list_create'),
+    path('api/admin/nominados/<uuid:id>/', views_admin.NominadoRetrieveUpdateDestroyAPIView.as_view(), name='admin_nominados_rud'),
+    # CRUD Admin Sugerencias
+    path('api/admin/sugerencias/', views_admin.SugerenciaListAPIView.as_view(), name='admin_sugerencias_list'),
+    path('api/admin/sugerencias/<uuid:id>/', views_admin.SugerenciaRetrieveUpdateDestroyAPIView.as_view(), name='admin_sugerencias_rud'),
     
     # Nuevas URLs para las mejoras
     path('api/verificar-voto/<uuid:premio_id>/', VerificarVotoView.as_view(), name='verificar_voto'),

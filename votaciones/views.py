@@ -119,9 +119,9 @@ class ListaPremiosView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        # Filtramos solo los premios que están activos y abiertos para votación
-        # (se puede ajustar según la lógica de negocio, por ejemplo, mostrar inactivos a admins)
-        premios = Premio.objects.filter(activo=True, estado='abierto').order_by('nombre')
+        # Filtramos solo los premios que están activos y en fase de votación
+        # (votacion_1 o votacion_2)
+        premios = Premio.objects.filter(activo=True, estado__in=['votacion_1', 'votacion_2']).order_by('nombre')
         # Pasamos el contexto de la request al serializer para que 'ya_votado_por_usuario' funcione
         serializer = PremioSerializer(premios, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -164,8 +164,8 @@ class VotarView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 2. Verificar que el premio está activo y abierto para votación en la ronda correcta
-        if not premio.activo or premio.estado != 'abierto' or premio.ronda_actual != ronda:
+        # 2. Verificar que el premio está activo y en la fase de votación correspondiente a la ronda
+        if (not premio.activo) or (premio.estado != f'votacion_{ronda}') or (premio.ronda_actual != ronda):
             return Response(
                 {"detail": f"Este premio no está abierto para votación en la Ronda {ronda}.", "code": "premio_not_open"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -306,8 +306,8 @@ class MisEstadisticasView(APIView):
         bronces = Premio.objects.filter(ganador_bronce__in=nominaciones_qs).count()
 
         # Flags de fase
-        mostrar_ronda2 = Premio.objects.filter(ronda_actual=2, estado='abierto').exists()
-        mostrar_medallas = Premio.objects.filter(estado='resultados').exists()
+        mostrar_ronda2 = Premio.objects.filter(ronda_actual=2, estado='votacion_2').exists()
+        mostrar_medallas = Premio.objects.filter(estado='finalizado').exists()
 
         data = {
             "total_nominaciones": total_nominaciones,
@@ -392,74 +392,75 @@ class ResultadosView(APIView):
     # ¡NUEVO MÉTODO POST! Para que el administrador publique los resultados.
     def post(self, request):
         premio_id = request.data.get('premio_id')
-
-        if not premio_id:
-            return Response(
-                {"detail": "Se requiere el ID del premio para publicar los resultados.", "code": "missing_premio_id"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            premio = Premio.objects.get(id=premio_id)
-        except Premio.DoesNotExist:
-            return Response(
-                {"detail": "Premio no encontrado.", "code": "premio_not_found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
         
-        # Validación: No permitir si los resultados ya han sido publicados
-        if premio.estado == 'resultados':
-            return Response(
-                {"detail": f"Los resultados para '{premio.nombre}' ya han sido publicados.", "code": "results_already_published"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Reutilizar la lógica de cálculo de puntos de la Ronda 2 (similar al GET)
-        PUNTOS_ORO = 3
-        PUNTOS_PLATA = 2
-        PUNTOS_BRONCE = 1
-
-        nominados_con_puntos = Voto.objects.filter(
-            premio=premio,
-            ronda=2,
-            orden_ronda2__in=[1, 2, 3]
-        ).values('nominado__id', 'nominado__nombre').annotate( # Solo necesitamos ID y nombre para identificar
-            puntos_totales=Sum(
-                Case(
-                    When(orden_ronda2=1, then=PUNTOS_ORO),
-                    When(orden_ronda2=2, then=PUNTOS_PLATA),
-                    When(orden_ronda2=3, then=PUNTOS_BRONCE),
-                    default=0
+        # Función auxiliar para publicar resultados de un premio
+        def publicar_premio(premio: Premio):
+            PUNTOS_ORO = 3
+            PUNTOS_PLATA = 2
+            PUNTOS_BRONCE = 1
+            nominados_con_puntos = Voto.objects.filter(
+                premio=premio,
+                ronda=2,
+                orden_ronda2__in=[1, 2, 3]
+            ).values('nominado__id', 'nominado__nombre').annotate(
+                puntos_totales=Sum(
+                    Case(
+                        When(orden_ronda2=1, then=PUNTOS_ORO),
+                        When(orden_ronda2=2, then=PUNTOS_PLATA),
+                        When(orden_ronda2=3, then=PUNTOS_BRONCE),
+                        default=0
+                    )
                 )
+            ).order_by('-puntos_totales', 'nominado__nombre')
+
+            ganador_oro = None
+            ganador_plata = None
+            ganador_bronce = None
+            nominados_lista = list(nominados_con_puntos)
+            if len(nominados_lista) > 0:
+                ganador_oro = Nominado.objects.get(id=nominados_lista[0]['nominado__id'])
+            if len(nominados_lista) > 1:
+                ganador_plata = Nominado.objects.get(id=nominados_lista[1]['nominado__id'])
+            if len(nominados_lista) > 2:
+                ganador_bronce = Nominado.objects.get(id=nominados_lista[2]['nominado__id'])
+
+            premio.ganador_oro = ganador_oro
+            premio.ganador_plata = ganador_plata
+            premio.ganador_bronce = ganador_bronce
+            premio.fecha_resultados_publicados = timezone.now()
+            premio.estado = 'finalizado'
+            premio.save()
+            return premio
+
+        # Si se especifica un premio concreto
+        if premio_id:
+            try:
+                premio = Premio.objects.get(id=premio_id)
+            except Premio.DoesNotExist:
+                return Response(
+                    {"detail": "Premio no encontrado.", "code": "premio_not_found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            # Evitar publicar de nuevo si ya está finalizado
+            if premio.estado == 'finalizado':
+                return Response(
+                    {"detail": f"Los resultados para '{premio.nombre}' ya han sido publicados.", "code": "results_already_published"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            publicado = publicar_premio(premio)
+            serializer = ResultadosPremioSerializer(publicado)
+            return Response(
+                {"message": f"Resultados para '{publicado.nombre}' calculados y publicados con éxito.", "premio_resultados": serializer.data},
+                status=status.HTTP_200_OK
             )
-        ).order_by('-puntos_totales', 'nominado__nombre')
 
-        ganador_oro = None
-        ganador_plata = None
-        ganador_bronce = None
+        # Si no se especifica premio_id, publicar para todos los que no estén finalizados
+        publicados = []
+        for p in Premio.objects.exclude(estado='finalizado').all():
+            publicados.append(ResultadosPremioSerializer(publicar_premio(p)).data)
 
-        nominados_lista = list(nominados_con_puntos)
-
-        if len(nominados_lista) > 0:
-            ganador_oro = Nominado.objects.get(id=nominados_lista[0]['nominado__id'])
-        if len(nominados_lista) > 1:
-            ganador_plata = Nominado.objects.get(id=nominados_lista[1]['nominado__id'])
-        if len(nominados_lista) > 2:
-            ganador_bronce = Nominado.objects.get(id=nominados_lista[2]['nominado__id'])
-
-        # Guardar los ganadores en el modelo Premio
-        premio.ganador_oro = ganador_oro
-        premio.ganador_plata = ganador_plata
-        premio.ganador_bronce = ganador_bronce
-        premio.fecha_resultados_publicados = timezone.now() # Establece la fecha de publicación
-        premio.estado = 'resultados' # Cambia el estado del premio
-        premio.save()
-
-        # Serializar el premio para devolver la información actualizada
-        serializer = ResultadosPremioSerializer(premio) # Usamos el serializer de resultados
-        
         return Response(
-            {"message": f"Resultados para '{premio.nombre}' calculados y publicados con éxito.", "premio_resultados": serializer.data},
+            {"message": "Resultados calculados y publicados para todos los premios.", "premios_resultados": publicados},
             status=status.HTTP_200_OK
         )
 # Vista para mostrar públicamente los resultados de premios ya publicados
@@ -469,7 +470,7 @@ class ResultadosPublicosView(APIView):
     def get(self, request):
         # Filtra los premios que tienen sus resultados publicados
         premios_publicados = Premio.objects.filter(
-            estado='resultados',
+            estado='finalizado',
             fecha_resultados_publicados__isnull=False
         ).order_by('nombre')
 

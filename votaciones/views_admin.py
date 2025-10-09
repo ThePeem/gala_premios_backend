@@ -2,6 +2,7 @@
 
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.permissions import IsAdminUser
+from rest_framework import status
 
 from votaciones.models import Premio, Nominado, Usuario, Sugerencia # Importaciones absolutas
 from votaciones.serializers import PremioSerializer, NominadoSerializer, SugerenciaSerializer # Importaciones absolutas
@@ -87,8 +88,9 @@ def estadisticas(request):
     
     # Estadísticas de premios
     premios_totales = Premio.objects.count()
-    premios_abiertos = Premio.objects.filter(estado='abierto').count()
-    premios_cerrados = Premio.objects.filter(estado='cerrado').count()
+    # Mapear a los estados vigentes: 'votacion_1', 'votacion_2', 'finalizado'
+    premios_abiertos = Premio.objects.filter(estado__in=['votacion_1', 'votacion_2']).count()
+    premios_cerrados = Premio.objects.filter(estado='finalizado').count()
     
     # Obtener la fase actual y la próxima fase
     fase_actual = config.fase_actual

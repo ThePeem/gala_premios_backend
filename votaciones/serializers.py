@@ -138,16 +138,16 @@ class PremioSerializer(serializers.ModelSerializer):
     def get_nominados_visible(self, obj: Premio):
         """
         Determina qué nominados mostrar públicamente según la fase:
-        - Antes o durante Ronda 1 (estado abierto/cerrado con ronda_actual=1): mostrar todos (hasta 16)
-        - Ronda 2: mostrar top 4 por votos de ronda 1
+        - Fase de votación 1: mostrar todos (hasta 16)
+        - Fase de votación 2: mostrar top 4 por votos de ronda 1
         - Resultados publicados: mostrar solo el campeón (ganador_oro)
         """
-        # Resultados definitivos
-        if obj.estado == 'resultados' and obj.ganador_oro:
+        # Resultados definitivos (estado finalizado)
+        if obj.estado == 'finalizado' and obj.ganador_oro:
             return NominadoSerializer([obj.ganador_oro], many=True).data
 
-        # Si estamos en R2 o se ha cerrado R1, mostrar top 4 de R1
-        if obj.ronda_actual == 2 or (obj.estado in ['abierto', 'cerrado'] and Voto.objects.filter(premio=obj, ronda=1).exists()):
+        # Si estamos en R2 o ya existen votos de R1 (indicativo de cierre de R1), mostrar top 4 de R1
+        if obj.estado == 'votacion_2' or (obj.estado == 'votacion_1' and Voto.objects.filter(premio=obj, ronda=1).exists()):
             # agregación de votos de ronda 1
             qs = (
                 Voto.objects.filter(premio=obj, ronda=1)
@@ -200,8 +200,9 @@ class VotoSerializer(serializers.ModelSerializer):
         if not nominado.premio == premio:
             raise serializers.ValidationError("El nominado seleccionado no pertenece a este premio.")
 
-        # Verificar si el premio está activo y en la ronda correcta (opcional, también se puede en la vista)
-        if not premio.activo or premio.estado != 'abierto' or premio.ronda_actual != ronda:
+        # Verificar si el premio está activo y en la ronda correcta
+        # Debe estar exactamente en el estado de votación de la ronda indicada
+        if (not premio.activo) or (premio.estado != f"votacion_{ronda}") or (premio.ronda_actual != ronda):
              raise serializers.ValidationError("Este premio no está abierto para votación en la ronda especificada.")
 
         return data
@@ -242,22 +243,45 @@ class ResultadosPremioSerializer(serializers.ModelSerializer):
 
 # --- Serializer para "Mis Nominaciones" simplificado para el perfil ---
 class MisNominacionSerializer(serializers.ModelSerializer):
-    premio_nombre = serializers.CharField(source='premio.nombre', read_only=True)
-    nominado_nombre = serializers.CharField(source='nombre', read_only=True)
-    fecha_voto = serializers.SerializerMethodField()
+    # Estructura esperada por el frontend:
+    # {
+    #   id,
+    #   premio: { id, nombre, estado, ronda_actual },
+    #   fecha_nominacion,
+    #   ronda,
+    #   es_activo
+    # }
+    premio = serializers.SerializerMethodField()
+    fecha_nominacion = serializers.SerializerMethodField()
     ronda = serializers.SerializerMethodField()
+    es_activo = serializers.SerializerMethodField()
 
     class Meta:
         model = Nominado
-        fields = ['id', 'premio_nombre', 'nominado_nombre', 'fecha_voto', 'ronda']
+        fields = ['id', 'premio', 'fecha_nominacion', 'ronda', 'es_activo']
         read_only_fields = fields
 
-    def get_fecha_voto(self, obj: Nominado):
-        # Última fecha en la que este nominado recibió un voto (de cualquier ronda)
+    def get_premio(self, obj: Nominado):
+        p = obj.premio
+        return {
+            'id': str(p.id),
+            'nombre': p.nombre,
+            'estado': p.estado,
+            'ronda_actual': p.ronda_actual,
+        }
+
+    def get_fecha_nominacion(self, obj: Nominado):
+        # Última fecha en la que este nominado recibió un voto; si no, fecha de creación
         last_vote = Voto.objects.filter(nominado=obj).order_by('-fecha_voto').first()
-        return last_vote.fecha_voto.isoformat() if last_vote else obj.fecha_creacion.isoformat() if obj.fecha_creacion else None
+        if last_vote:
+            return last_vote.fecha_voto.isoformat()
+        return obj.fecha_creacion.isoformat() if obj.fecha_creacion else None
 
     def get_ronda(self, obj: Nominado):
         # Si tiene votos en ronda 2, devolvemos 2; si no, 1 si está nominado.
         has_r2 = Voto.objects.filter(nominado=obj, ronda=2).exists()
         return 2 if has_r2 else 1
+
+    def get_es_activo(self, obj: Nominado):
+        # Activo si el premio está en alguna fase de votación
+        return obj.premio.estado in ['votacion_1', 'votacion_2']
