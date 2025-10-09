@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/premios/', ListaPremiosView.as_view(), name='lista_premios'),
     path('api/premios-todos/', ListaTodosPremiosView.as_view(), name='lista_todos_premios'),
     path('api/votar/', VotarView.as_view(), name='votar'),
+    path('api/mis-nominaciones/', MisNominacionesView.as_view(), name='mis_nominaciones'),
     path('api/participantes/', ListaParticipantesView.as_view(), name='lista_participantes'),
     path('api/mi-perfil/', MiPerfilView.as_view(), name='mi_perfil'),
     path('api/mis-estadisticas/', MisEstadisticasView.as_view(), name='mis_estadisticas'),
