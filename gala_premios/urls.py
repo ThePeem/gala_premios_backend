@@ -56,6 +56,7 @@ urlpatterns = [
     # URLs para el panel de administración
     path('api/admin/estadisticas/', views_admin.estadisticas, name='admin_estadisticas'),
     path('api/admin/avanzar-fase/', views_admin.avanzar_fase, name='avanzar_fase'),
+    path('api/admin/reset-gala/', views_admin.reset_gala, name='reset_gala'),
     # CRUD Admin Premios
     path('api/admin/premios/', views_admin.PremioListCreateAPIView.as_view(), name='admin_premios_list_create'),
     path('api/admin/premios/<uuid:id>/', views_admin.PremioRetrieveUpdateDestroyAPIView.as_view(), name='admin_premios_rud'),

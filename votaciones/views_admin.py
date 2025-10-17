@@ -70,6 +70,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.db import transaction
 from .models import Premio, Voto, Usuario, ConfiguracionSistema
 
 @api_view(['GET'])
@@ -166,5 +167,43 @@ def avanzar_fase(request):
     except Exception as e:
         return Response(
             {'error': f'Error al avanzar de fase: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def reset_gala(request):
+    """
+    Resetea la gala para pruebas: elimina votos y devuelve el sistema a la fase inicial.
+    No elimina usuarios ni premios/nominados, solo limpia votos y reinicia estados.
+    """
+    try:
+        with transaction.atomic():
+            # Borrar todos los votos
+            Voto.objects.all().delete()
+
+            # Resetear todos los premios a estado inicial
+            for p in Premio.objects.all():
+                p.estado = 'preparacion'
+                p.ronda_actual = 1
+                p.ganador_oro = None
+                p.ganador_plata = None
+                p.ganador_bronce = None
+                p.fecha_resultados_publicados = None
+                p.save(update_fields=['estado', 'ronda_actual', 'ganador_oro', 'ganador_plata', 'ganador_bronce', 'fecha_resultados_publicados'])
+
+            # Resetear configuración del sistema a fase inicial
+            config, _ = ConfiguracionSistema.objects.get_or_create()
+            config.fase_actual = 'preparacion'
+            config.save(update_fields=['fase_actual'])
+
+        return Response({
+            'mensaje': 'Gala reiniciada: votos eliminados y fases restablecidas a preparación.',
+            'fase_actual': 'preparacion'
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': f'No se pudo reiniciar la gala: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
