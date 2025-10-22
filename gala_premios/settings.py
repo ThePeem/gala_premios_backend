@@ -67,16 +67,15 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Debe ir lo más arriba posible
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # <-- ¡MOVER ESTE ARRIBA DEL TODO!
-    'whitenoise.middleware.WhiteNoiseMiddleware', # <-- Este puede ir aquí o más abajo, pero CORS es primero
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # ... el resto de tus middlewares
 ]
 
 ROOT_URLCONF = 'gala_premios.urls'
@@ -188,6 +187,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # permite cookies de sesión
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -246,8 +246,14 @@ CORS_ALLOW_CREDENTIALS = True
 # Orígenes de confianza para CSRF
 CSRF_TRUSTED_ORIGINS = [
     'https://galapremiospiorn.vercel.app',
-    'https://galapremiospiorn.on.render.com',
+    'https://galapremiospiorn.onrender.com',
 ]
+
+# Cookies cross-site (si se usa autenticación por sesión)
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
 
 # Google Sign-In
 # Client ID configurado en Render (producción) o .env (desarrollo)
