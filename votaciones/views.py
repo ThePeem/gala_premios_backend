@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from django.db.models import Sum, Case, When, F 
+from django.db import transaction
 from django.utils import timezone # Para la fecha de publicación de resultados
 from django.conf import settings
 
@@ -148,112 +149,57 @@ class VotarView(APIView):
                 status=status.HTTP_403_FORBIDDEN # 403 Forbidden
             )
         
+        def process_vote(validated_data):
+            premio = validated_data['premio']
+            nominado = validated_data['nominado']
+            ronda = validated_data.get('ronda', 1)
+            orden_ronda2 = validated_data.get('orden_ronda2', None)
+
+            # 1. No auto-voto
+            if nominado.usuarios_vinculados.filter(id=request.user.id).exists():
+                return Response({"detail": "No puedes votarte a ti mismo en ninguna ronda.", "code": "self_vote_forbidden"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 2. Premio abierto y en ronda correcta
+            if (not premio.activo) or (premio.estado != f'votacion_{ronda}') or (premio.ronda_actual != ronda):
+                return Response({"detail": f"Este premio no está abierto para votación en la Ronda {ronda}.", "code": "premio_not_open"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 3. Nominado pertenece al premio
+            if not nominado.premio == premio:
+                return Response({"detail": "El nominado seleccionado no pertenece a este premio.", "code": "nominado_mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 4. Lógica por ronda
+            existing_votes = Voto.objects.filter(usuario=request.user, premio=premio, ronda=ronda)
+
+            if ronda == 1:
+                if existing_votes.count() >= 5:
+                    return Response({"detail": "Ya has emitido el máximo de 5 votos para este premio en la Ronda 1.", "code": "max_votes_r1_reached"}, status=status.HTTP_400_BAD_REQUEST)
+                if existing_votes.filter(nominado=nominado).exists():
+                    return Response({"detail": "Ya has votado por este nominado en esta ronda.", "code": "already_voted_nominado_r1"}, status=status.HTTP_400_BAD_REQUEST)
+                if orden_ronda2 is not None:
+                    return Response({"detail": "El campo 'orden_ronda2' no es válido en la Ronda 1.", "code": "invalid_order_r1"}, status=status.HTTP_400_BAD_REQUEST)
+            elif ronda == 2:
+                if orden_ronda2 is None:
+                    return Response({"detail": "Para la Ronda 2, debes especificar un 'orden_ronda2' (1, 2 o 3).", "code": "missing_order_r2"}, status=status.HTTP_400_BAD_REQUEST)
+                if orden_ronda2 not in [1, 2, 3]:
+                    return Response({"detail": "El 'orden_ronda2' debe ser 1 (Oro), 2 (Plata) o 3 (Bronce).", "code": "invalid_order_value"}, status=status.HTTP_400_BAD_REQUEST)
+                if existing_votes.count() >= 3:
+                    return Response({"detail": "Ya has emitido el máximo de 3 votos para este premio en la Ronda 2.", "code": "max_votes_r2_reached"}, status=status.HTTP_400_BAD_REQUEST)
+                if existing_votes.filter(orden_ronda2=orden_ronda2).exists():
+                    return Response({"detail": f"Ya has usado la posición {orden_ronda2} para este premio en la Ronda 2.", "code": "position_already_used"}, status=status.HTTP_400_BAD_REQUEST)
+                if existing_votes.filter(nominado=nominado).exists():
+                    return Response({"detail": "Ya has votado por este nominado en esta Ronda 2.", "code": "already_voted_nominado_r2"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"detail": "Ronda de votación no válida.", "code": "invalid_round"}, status=status.HTTP_400_BAD_REQUEST)
+
+            return None  # OK
+
         serializer = VotoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        premio = serializer.validated_data['premio']
-        nominado = serializer.validated_data['nominado']
-        ronda = serializer.validated_data.get('ronda', 1) # Si no se especifica, asume ronda 1
-        orden_ronda2 = serializer.validated_data.get('orden_ronda2', None) # Obtiene el orden, puede ser None
-
-        # 1. Validar que el usuario no se vote a sí mismo
-        # Comprueba si el nominado actual está vinculado al usuario que vota
-        if nominado.usuarios_vinculados.filter(id=request.user.id).exists():
-            return Response(
-                {"detail": "No puedes votarte a ti mismo en ninguna ronda.", "code": "self_vote_forbidden"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 2. Verificar que el premio está activo y en la fase de votación correspondiente a la ronda
-        if (not premio.activo) or (premio.estado != f'votacion_{ronda}') or (premio.ronda_actual != ronda):
-            return Response(
-                {"detail": f"Este premio no está abierto para votación en la Ronda {ronda}.", "code": "premio_not_open"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # 3. Verificar que el nominado pertenece al premio
-        if not nominado.premio == premio:
-            return Response(
-                {"detail": "El nominado seleccionado no pertenece a este premio.", "code": "nominado_mismatch"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 4. Lógica de votación por rondas
-        existing_votes = Voto.objects.filter(usuario=request.user, premio=premio, ronda=ronda)
-
-        if ronda == 1:
-            # En la Ronda 1, el usuario puede votar hasta 5 nominados diferentes por premio
-            if existing_votes.count() >= 5:
-                return Response(
-                    {"detail": "Ya has emitido el máximo de 5 votos para este premio en la Ronda 1.", "code": "max_votes_r1_reached"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            # Asegurarse de que no vota dos veces por el mismo nominado en la misma ronda
-            if existing_votes.filter(nominado=nominado).exists():
-                return Response(
-                    {"detail": "Ya has votado por este nominado en esta ronda.", "code": "already_voted_nominado_r1"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            # Asegurarse de que 'orden_ronda2' no se envía en Ronda 1
-            if orden_ronda2 is not None:
-                return Response(
-                    {"detail": "El campo 'orden_ronda2' no es válido en la Ronda 1.", "code": "invalid_order_r1"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        elif ronda == 2:
-            # En la Ronda 2, el usuario vota su top 3 (Oro, Plata, Bronce)
-            if orden_ronda2 is None:
-                return Response(
-                    {"detail": "Para la Ronda 2, debes especificar un 'orden_ronda2' (1, 2 o 3).", "code": "missing_order_r2"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if orden_ronda2 not in [1, 2, 3]:
-                return Response(
-                    {"detail": "El 'orden_ronda2' debe ser 1 (Oro), 2 (Plata) o 3 (Bronce).", "code": "invalid_order_value"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Comprobar que no ha votado 3 veces ya en la ronda 2 para este premio
-            if existing_votes.count() >= 3:
-                 return Response(
-                    {"detail": "Ya has emitido el máximo de 3 votos para este premio en la Ronda 2.", "code": "max_votes_r2_reached"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Comprobar que la posición (orden_ronda2) no ha sido usada ya para este premio en Ronda 2
-            if existing_votes.filter(orden_ronda2=orden_ronda2).exists():
-                return Response(
-                    {"detail": f"Ya has usado la posición {orden_ronda2} para este premio en la Ronda 2.", "code": "position_already_used"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Comprobar que no ha votado por el mismo nominado dos veces en Ronda 2 (aunque la posición sea diferente)
-            if existing_votes.filter(nominado=nominado).exists():
-                return Response(
-                    {"detail": "Ya has votado por este nominado en esta Ronda 2.", "code": "already_voted_nominado_r2"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Opcional: Validación de que el nominado es un finalista (esto requiere más lógica)
-            # Por ahora, asumimos que el frontend solo presentará finalistas válidos.
-            # futura_logica_finalistas = premio.nominados.filter(es_finalista_ronda2=True)
-            # if nominado not in futura_logica_finalistas: ...
-
-        else:
-            return Response(
-                {"detail": "Ronda de votación no válida.", "code": "invalid_round"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Si todas las validaciones pasan, guardar el voto
-        # El serializer no tiene el usuario, lo asignamos aquí
+        err = process_vote(serializer.validated_data)
+        if err is not None:
+            return err
         serializer.save(usuario=request.user)
-
-        return Response(
-            {"message": "Voto registrado con éxito.", "voto_id": serializer.data['id']},
-            status=status.HTTP_201_CREATED
-        )
+        return Response({"message": "Voto registrado con éxito.", "voto_id": serializer.data['id']}, status=status.HTTP_201_CREATED)
 
 # Vista para listar todos los usuarios (participantes)
 class ListaParticipantesView(APIView):

@@ -116,6 +116,10 @@ class PremioSerializer(serializers.ModelSerializer):
     nominados_visible = serializers.SerializerMethodField()
 
     ya_votado_por_usuario = serializers.SerializerMethodField()
+    # Campos de estadísticas en vivo por premio (para panel admin)
+    total_votos = serializers.SerializerMethodField()
+    total_votantes = serializers.SerializerMethodField()
+    porcentaje_participacion = serializers.SerializerMethodField()
 
     class Meta:
         model = Premio
@@ -134,6 +138,22 @@ class PremioSerializer(serializers.ModelSerializer):
     def get_nominados_con_votos(self, obj):
         nominados = obj.nominados.all().order_by('nombre')
         return NominadoSerializer(nominados, many=True).data
+
+    def get_total_votos(self, obj: Premio) -> int:
+        # Votos en la ronda actual para este premio
+        return Voto.objects.filter(premio=obj, ronda=obj.ronda_actual).count()
+
+    def get_total_votantes(self, obj: Premio) -> int:
+        # Usuarios únicos que han votado en este premio en la ronda actual
+        return Voto.objects.filter(premio=obj, ronda=obj.ronda_actual).values('usuario').distinct().count()
+
+    def get_porcentaje_participacion(self, obj: Premio) -> float:
+        # Porcentaje de usuarios verificados que han votado en este premio (ronda actual)
+        total_verificados = Usuario.objects.filter(verificado=True).count()
+        if total_verificados == 0:
+            return 0.0
+        votantes = self.get_total_votantes(obj)
+        return round((votantes / total_verificados) * 100, 2)
 
     def get_nominados_visible(self, obj: Premio):
         """
