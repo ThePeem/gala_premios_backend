@@ -31,7 +31,7 @@ AUTH_USER_MODEL = 'votaciones.Usuario' # <--- Asegúrate de que esta línea est�
 # DEBUG = True # <-- ¡Esto es solo para desarrollo!
 
 # En producción, DEBUG debe ser False. Viene de variable de entorno.
-DEBUG = os.environ.get('DEBUG', 'True') == 'True' # Convierte el string 'True'/'False' a booleano
+DEBUG = os.environ.get('DEBUG', 'False') == 'True' # Convierte el string 'True'/'False' a booleano
 
 
 # ALLOWED_HOSTS = [] # <-- ¡Esto es solo para desarrollo!
