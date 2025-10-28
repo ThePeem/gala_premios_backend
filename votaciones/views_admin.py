@@ -68,7 +68,7 @@ class NominadoRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum, Case, When
 from django.utils import timezone
 from django.db import transaction
 from .models import Premio, Voto, Usuario, ConfiguracionSistema
@@ -116,6 +116,64 @@ def estadisticas(request):
         'puede_publicar_resultados': puede_publicar_resultados,
         'fecha_consulta': timezone.now().isoformat()
     })
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def premios_top(request):
+    """
+    Devuelve para cada premio abierto (votacion_1 o votacion_2) el top 5 de nominados
+    según la ronda actual del premio:
+      - Ronda 1: ordenado por número de votos (ronda=1)
+      - Ronda 2: ordenado por puntos (oro=3, plata=2, bronce=1)
+    """
+    abiertos = Premio.objects.filter(estado__in=['votacion_1', 'votacion_2']).order_by('nombre')
+
+    data = []
+    for p in abiertos:
+        if p.ronda_actual == 1:
+            tops = (
+                Voto.objects
+                .filter(premio=p, ronda=1)
+                .values('nominado__id', 'nominado__nombre')
+                .annotate(valor=Count('id'))
+                .order_by('-valor', 'nominado__nombre')[:5]
+            )
+        else:
+            tops = (
+                Voto.objects
+                .filter(premio=p, ronda=2, orden_ronda2__in=[1,2,3])
+                .values('nominado__id', 'nominado__nombre')
+                .annotate(
+                    valor=Sum(
+                        Case(
+                            When(orden_ronda2=1, then=3),
+                            When(orden_ronda2=2, then=2),
+                            When(orden_ronda2=3, then=1),
+                            default=0,
+                        )
+                    )
+                )
+                .order_by('-valor', 'nominado__nombre')[:5]
+            )
+
+        data.append({
+            'premio': {
+                'id': str(p.id),
+                'nombre': p.nombre,
+                'estado': p.estado,
+                'ronda_actual': p.ronda_actual,
+            },
+            'top': [
+                {
+                    'id': str(item['nominado__id']),
+                    'nombre': item['nominado__nombre'],
+                    'valor': item['valor'],
+                }
+                for item in tops
+            ],
+        })
+
+    return Response(data)
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
