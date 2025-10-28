@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
-from django.db.models import Sum, Case, When, F 
+from django.db.models import Sum, Case, When, F, Count 
 from django.db import transaction
 from django.utils import timezone # Para la fecha de publicación de resultados
 from django.conf import settings
@@ -171,8 +171,8 @@ class VotarView(APIView):
             existing_votes = Voto.objects.filter(usuario=request.user, premio=premio, ronda=ronda)
 
             if ronda == 1:
-                if existing_votes.count() >= 5:
-                    return Response({"detail": "Ya has emitido el máximo de 5 votos para este premio en la Ronda 1.", "code": "max_votes_r1_reached"}, status=status.HTTP_400_BAD_REQUEST)
+                if existing_votes.count() >= 4:
+                    return Response({"detail": "Ya has emitido el máximo de 4 votos para este premio en la Ronda 1.", "code": "max_votes_r1_reached"}, status=status.HTTP_400_BAD_REQUEST)
                 if existing_votes.filter(nominado=nominado).exists():
                     return Response({"detail": "Ya has votado por este nominado en esta ronda.", "code": "already_voted_nominado_r1"}, status=status.HTTP_400_BAD_REQUEST)
                 if orden_ronda2 is not None:
@@ -188,6 +188,15 @@ class VotarView(APIView):
                     return Response({"detail": f"Ya has usado la posición {orden_ronda2} para este premio en la Ronda 2.", "code": "position_already_used"}, status=status.HTTP_400_BAD_REQUEST)
                 if existing_votes.filter(nominado=nominado).exists():
                     return Response({"detail": "Ya has votado por este nominado en esta Ronda 2.", "code": "already_voted_nominado_r2"}, status=status.HTTP_400_BAD_REQUEST)
+                finalistas_ids = list(
+                    Voto.objects.filter(premio=premio, ronda=1)
+                    .values('nominado')
+                    .annotate(total=Count('id'))
+                    .order_by('-total', 'nominado__nombre')[:4]
+                )
+                finalistas_ids = [x['nominado'] for x in finalistas_ids]
+                if nominado.id not in finalistas_ids:
+                    return Response({"detail": "Solo puedes votar a finalistas de la Ronda 1 en la Ronda 2.", "code": "nominado_not_finalist"}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"detail": "Ronda de votación no válida.", "code": "invalid_round"}, status=status.HTTP_400_BAD_REQUEST)
 

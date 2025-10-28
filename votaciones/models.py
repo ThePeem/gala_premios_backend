@@ -285,8 +285,8 @@ class Voto(models.Model):
                 ronda=self.ronda
             ).exclude(pk=getattr(self, 'pk', None)).count()
             
-            if self.ronda == 1 and votos_en_ronda >= 5:
-                raise ValidationError("Ya has alcanzado el límite de 5 votos en la Ronda 1")
+            if self.ronda == 1 and votos_en_ronda >= 4:
+                raise ValidationError("Ya has alcanzado el límite de 4 votos en la Ronda 1")
             elif self.ronda == 2 and votos_en_ronda >= 3:
                 raise ValidationError("Ya has alcanzado el límite de 3 votos en la Ronda 2")
     
