@@ -180,7 +180,7 @@ class VotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voto
         # Campos que se envían desde el frontend para crear el voto
-        fields = ['id', 'premio', 'nominado', 'ronda', 'usuario_username', 'premio_nombre', 'nominado_nombre', 'fecha_voto']
+        fields = ['id', 'premio', 'nominado', 'ronda', 'orden_ronda2', 'usuario_username', 'premio_nombre', 'nominado_nombre', 'fecha_voto']
         # 'usuario' no se incluye en fields de entrada porque lo asignará la vista automáticamente (request.user)
         read_only_fields = ['id', 'usuario_username', 'premio_nombre', 'nominado_nombre', 'fecha_voto']
 
