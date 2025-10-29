@@ -127,6 +127,7 @@ def premios_top(request):
       - Ronda 2: ordenado por puntos (oro=3, plata=2, bronce=1)
     """
     abiertos = Premio.objects.filter(estado__in=['votacion_1', 'votacion_2']).order_by('nombre')
+    total_usuarios = Usuario.objects.count()
 
     data = []
     for p in abiertos:
@@ -138,6 +139,8 @@ def premios_top(request):
                 .annotate(valor=Count('id'))
                 .order_by('-valor', 'nominado__nombre')[:5]
             )
+            total_votos = Voto.objects.filter(premio=p, ronda=1).count()
+            votantes_distintos = Voto.objects.filter(premio=p, ronda=1).values('usuario').distinct().count()
         else:
             tops = (
                 Voto.objects
@@ -155,6 +158,8 @@ def premios_top(request):
                 )
                 .order_by('-valor', 'nominado__nombre')[:5]
             )
+            total_votos = Voto.objects.filter(premio=p, ronda=2).count()
+            votantes_distintos = Voto.objects.filter(premio=p, ronda=2).values('usuario').distinct().count()
 
         data.append({
             'premio': {
@@ -163,6 +168,9 @@ def premios_top(request):
                 'estado': p.estado,
                 'ronda_actual': p.ronda_actual,
             },
+            'total_votos': total_votos,
+            'votantes_distintos': votantes_distintos,
+            'total_usuarios': total_usuarios,
             'top': [
                 {
                     'id': str(item['nominado__id']),
