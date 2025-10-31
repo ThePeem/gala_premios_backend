@@ -138,16 +138,16 @@ class PremioSerializer(serializers.ModelSerializer):
     def get_nominados_visible(self, obj: Premio):
         """
         Determina qué nominados mostrar públicamente según la fase:
-        - Fase de votación 1: mostrar todos (hasta 16)
+        - Fase de votación 1: mostrar todos los nominados activos del premio
         - Fase de votación 2: mostrar top 4 por votos de ronda 1
-        - Resultados publicados: mostrar solo el campeón (ganador_oro)
+        - Resultados publicados: mostrar solo el ganador (ganador_oro)
         """
         # Resultados definitivos (estado finalizado)
         if obj.estado == 'finalizado' and obj.ganador_oro:
             return NominadoSerializer([obj.ganador_oro], many=True).data
 
-        # Si estamos en R2 o ya existen votos de R1 (indicativo de cierre de R1), mostrar top 4 de R1
-        if obj.estado == 'votacion_2' or (obj.estado == 'votacion_1' and Voto.objects.filter(premio=obj, ronda=1).exists()):
+        # En R2: mostrar top 4 de R1
+        if obj.estado == 'votacion_2':
             # agregación de votos de ronda 1
             qs = (
                 Voto.objects.filter(premio=obj, ronda=1)
@@ -161,7 +161,7 @@ class PremioSerializer(serializers.ModelSerializer):
             ordered = sorted(nominados, key=lambda n: ids.index(n.id))
             return NominadoSerializer(ordered, many=True).data
 
-        # Por defecto: mostrar todos activos
+        # En R1 y resto de estados: mostrar todos los nominados activos
         nominados = obj.nominados.all().order_by('nombre')
         return NominadoSerializer(nominados, many=True).data
 
