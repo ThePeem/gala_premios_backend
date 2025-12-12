@@ -153,7 +153,7 @@ class PremioSerializer(serializers.ModelSerializer):
                 Voto.objects.filter(premio=obj, ronda=1)
                 .values('nominado')
                 .annotate(total=models.Count('id'))
-                .order_by('-total')[:4]
+                .order_by('-total', 'nominado__nombre')[:4]
             )
             ids = [row['nominado'] for row in qs]
             nominados = list(Nominado.objects.filter(id__in=ids))
